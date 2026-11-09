@@ -22,7 +22,7 @@ def get_osrm_road_path(lat1, lon1, lat2, lon2):
 def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
     """
     Creates an interactive Folium map marking individual gang members (up to 5)
-    with completely unique icon shapes and distinct colors.
+    using professional custom HTML numbered badges and destination flag.
     """
     trichy_lat = 10.8305
     trichy_lon = 78.6821
@@ -31,7 +31,7 @@ def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
     
     full_road_coords = []
     
-    # Fetch road geometries segment by segment
+    # Fetch road geometries segment by segment along the exact path nodes
     for i in range(len(path_nodes) - 1):
         u = path_nodes[i]
         v = path_nodes[i + 1]
@@ -52,13 +52,13 @@ def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
     for idx, m_id in enumerate(member_starts):
         stop_to_members[m_id].append(idx + 1)
 
-    # Unique icon shapes & colors mapping for up to 5 members
-    member_styles = {
-        1: {'color': 'green', 'icon': 'user'},       # Member 1: User Icon (Green)
-        2: {'color': 'orange', 'icon': 'star'},      # Member 2: Star Icon (Orange)
-        3: {'color': 'purple', 'icon': 'heart'},     # Member 3: Heart Icon (Purple)
-        4: {'color': 'cadetblue', 'icon': 'bookmark'}, # Member 4: Bookmark Icon (Cadetblue)
-        5: {'color': 'darkred', 'icon': 'fire'}      # Member 5: Fire Icon (Darkred)
+    # Distinct vibrant colors for members 1 to 5
+    member_colors = {
+        1: '#16a34a',  # Green
+        2: '#ea580c',  # Orange
+        3: '#9333ea',  # Purple
+        4: '#0284c7',  # Blue
+        5: '#dc2626'   # Red/Darkred
     }
 
     # Place custom markers for all stops along the path
@@ -71,33 +71,48 @@ def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
             zone = stop_row['zone'].values[0]
             shelter = "Yes (Sheltered)" if int(stop_row['is_sheltered'].values[0]) == 1 else "No (Open Stop)"
             
-            # Check marker type
             if stop_id == path_nodes[-1]:
-                color = 'red'
-                icon_name = 'flag'
-                prefix = 'glyphicon'
-                popup_title = '🎯 MEET-UP DESTINATION'
+                # Destination Flag Pin
+                folium.Marker(
+                    location=[lat, lon],
+                    popup=f"<b>🎯 MEET-UP DESTINATION</b><br><b>Stop:</b> {name}<br><b>Zone:</b> {zone}",
+                    icon=folium.Icon(color='red', icon='flag', prefix='glyphicon')
+                ).add_to(m)
             elif stop_id in stop_to_members:
                 members_list = stop_to_members[stop_id]
                 m_str = ", ".join(map(str, members_list))
                 first_m = members_list[0]
+                bg_color = member_colors.get(first_m, '#2563eb')
                 
-                style = member_styles.get(first_m, {'color': 'blue', 'icon': 'user'})
-                color = style['color']
-                icon_name = style['icon']
-                prefix = 'glyphicon'
-                popup_title = f'👤 GANG MEMBER(S) {m_str} START'
+                # Professional HTML Circular Badge for Members
+                html_icon = f"""
+                <div style="
+                    background-color: {bg_color};
+                    color: white;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 14px;
+                    border: 2px solid white;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                ">M{m_str}</div>
+                """
+                folium.Marker(
+                    location=[lat, lon],
+                    popup=f"<b>👤 GANG MEMBER(S) {m_str} START</b><br><b>Stop:</b> {name}<br><b>Zone:</b> {zone}",
+                    icon=folium.DivIcon(html=html_icon, icon_size=(32, 32), icon_anchor=(16, 16))
+                ).add_to(m)
             else:
-                color = 'blue'
-                icon_name = 'bus'
-                prefix = 'fa'
-                popup_title = f'🚏 TRANSIT STOP'
-                
-            folium.Marker(
-                location=[lat, lon],
-                popup=f"<b>{popup_title}</b><br><b>Stop:</b> {name}<br><b>Zone:</b> {zone}<br><b>Shelter:</b> {shelter}",
-                icon=folium.Icon(color=color, icon=icon_name, prefix=prefix)
-            ).add_to(m)
+                # Intermediate transit stops
+                folium.Marker(
+                    location=[lat, lon],
+                    popup=f"<b>🚏 TRANSIT STOP</b><br><b>Stop:</b> {name}<br><b>Zone:</b> {zone}",
+                    icon=folium.Icon(color='blue', icon='bus', prefix='fa')
+                ).add_to(m)
             
     # Draw the accurate road polyline
     if len(full_road_coords) > 1:
@@ -105,7 +120,7 @@ def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
             full_road_coords,
             color='#2563eb',
             weight=5,
-            opacity=0.8,
+            opacity=0.85,
             tooltip="Gang Convergence Route"
         ).add_to(m)
         
