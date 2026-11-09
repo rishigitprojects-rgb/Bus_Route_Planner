@@ -3,14 +3,13 @@ from services.graph_builder import build_transit_graph
 
 def find_optimal_route(source_id, target_id, optimization_metric='base_time_mins', traffic_multiplier=1.0):
     """
-    Finds the optimal path using Dijkstra's algorithm with optional live traffic congestion multiplier.
+    Finds the optimal path using Dijkstra's algorithm with optional traffic congestion multiplier.
     """
     G, stops_df = build_transit_graph(weight_metric=optimization_metric)
     
-    # If traffic simulation is enabled, dynamically adjust edge weights for time-based metrics
     if traffic_multiplier > 1.0 and optimization_metric == 'base_time_mins':
-        for u, v, data in G.edges(data=True):
-            G[u][v]['weight'] = data['base_time_mins'] * traffic_multiplier
+        for u, v, k, data in G.edges(keys=True, data=True):
+            G[u][v][k]['weight'] = data['base_time_mins'] * traffic_multiplier
             
     try:
         path_nodes = nx.shortest_path(G, source=source_id, target=target_id, weight='weight')
