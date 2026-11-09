@@ -15,11 +15,11 @@ def load_transit_data():
 def build_transit_graph(weight_metric='base_time_mins'):
     """
     Builds a NetworkX MultiDiGraph representing the Trichy bus network.
-    weight_metric can be 'base_time_mins', 'distance_km', or 'fare_rs'.
+    Automatically adds bidirectional edges so buses can travel both ways seamlessly.
     """
     stops_df, routes_df = load_transit_data()
     
-    # Create a Directed Graph that allows multiple edges between the same stops (different buses)
+    # Create a Directed Graph that allows multiple edges between stops
     G = nx.MultiDiGraph()
     
     # Add nodes (Bus Stops) with attributes
@@ -33,13 +33,28 @@ def build_transit_graph(weight_metric='base_time_mins'):
             is_sheltered=row['is_sheltered']
         )
         
-    # Add edges (Bus Routes) with weights
+    # Add edges (Bus Routes - Bidirectional for robust routing)
     for _, row in routes_df.iterrows():
+        u = row['from_stop_id']
+        v = row['to_stop_id']
+        
+        # 1. Forward Edge (From -> To)
         G.add_edge(
-            row['from_stop_id'],
-            row['to_stop_id'],
+            u, v,
             route_id=row['route_id'],
             bus_number=str(row['bus_number']),
+            weight=float(row[weight_metric]),
+            distance_km=float(row['distance_km']),
+            base_time_mins=float(row['base_time_mins']),
+            fare_rs=float(row['fare_rs']),
+            govt_free_pass_allowed=int(row['govt_free_pass_allowed'])
+        )
+        
+        # 2. Reverse Edge (To -> From) - Ensures routing never throws dead-end errors
+        G.add_edge(
+            v, u,
+            route_id=row['route_id'] + "-Rev",
+            bus_number=str(row['bus_number']) + " (Return)",
             weight=float(row[weight_metric]),
             distance_km=float(row['distance_km']),
             base_time_mins=float(row['base_time_mins']),
