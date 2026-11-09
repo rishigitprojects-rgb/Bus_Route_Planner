@@ -4,12 +4,12 @@ from services.graph_builder import build_transit_graph
 def find_optimal_route(source_id, target_id, optimization_metric='base_time_mins'):
     """
     Finds the optimal path between source and target stops 
-    using NetworkX shortest_path (Dijkstra implementation).
+    using NetworkX shortest_path with the selected optimization metric.
     """
     G, stops_df = build_transit_graph(weight_metric=optimization_metric)
     
     try:
-        # Compute shortest path using Dijkstra's algorithm based on weights
+        # Compute shortest path using Dijkstra's algorithm based on selected weights
         path_nodes = nx.shortest_path(G, source=source_id, target=target_id, weight='weight')
         path_length = nx.shortest_path_length(G, source=source_id, target=target_id, weight='weight')
         
@@ -22,7 +22,7 @@ def find_optimal_route(source_id, target_id, optimization_metric='base_time_mins
             u = path_nodes[i]
             v = path_nodes[i + 1]
             
-            # Get edge data (if multiple buses, pick the one with minimum weight)
+            # Get edge data (pick the one with minimum weight for the chosen metric)
             edge_data = G.get_edge_data(u, v)
             best_edge_key = min(edge_data, key=lambda k: edge_data[k]['weight'])
             edge = edge_data[best_edge_key]
@@ -64,4 +64,3 @@ def find_optimal_route(source_id, target_id, optimization_metric='base_time_mins
             'success': False,
             'error': 'One or both selected stops are invalid.'
         }
-    
