@@ -60,53 +60,63 @@ with col_s2:
 source_id = stop_options[source_name]
 target_id = stop_options[target_name]
 
+# Initialize session state so results persist across map interactions
+if 'route_result' not in st.session_state:
+    st.session_state.route_result = None
+
 # 4. Route Calculation Trigger
 if st.button("🚀 Calculate Optimal AI Route", type="primary"):
     if source_id == target_id:
         st.warning("⚠️ Starting location and destination cannot be the same. Please select different stops.")
+        st.session_state.route_result = None
     else:
         result = find_optimal_route(source_id, target_id, optimization_metric=selected_metric)
-        
         if result['success']:
-            st.success(f"✅ Optimal Path Found Successfully using Dijkstra's Algorithm!")
-            
-            # Metrics Dashboard
-            m1, m2, m3, m4 = st.columns(4)
-            with m1:
-                st.metric("Total Estimated Time", f"{result['total_cost']} mins")
-            with m2:
-                st.metric("Total Distance", f"{result['total_distance_km']} km")
-            with m3:
-                st.metric("Estimated Total Fare", f"₹ {result['total_fare_rs']}")
-            with m4:
-                st.metric("Stops Count", f"{len(result['path_nodes'])} Stops")
-                
+            st.session_state.route_result = result
+        else:
+            st.session_state.route_result = None
+            st.error(f"❌ Routing Error: {result['error']}")
+
+# 5. Persistent Results Display
+if st.session_state.route_result is not None:
+    result = st.session_state.route_result
+    st.success(f"✅ Optimal Path Found Successfully using Dijkstra's Algorithm!")
+    
+    # Metrics Dashboard
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric("Total Estimated Time", f"{result['total_cost']} mins")
+    with m2:
+        st.metric("Total Distance", f"{result['total_distance_km']} km")
+    with m3:
+        st.metric("Estimated Total Fare", f"₹ {result['total_fare_rs']}")
+    with m4:
+        st.metric("Stops Count", f"{len(result['path_nodes'])} Stops")
+        
+    st.markdown("---")
+    
+    # Two-column layout: Route details table & Interactive Map
+    col_left, col_right = st.columns([1, 1.2])
+    
+    with col_left:
+        st.subheader("📋 Step-by-Step Boarding Guide")
+        for idx, step in enumerate(result['route_details'], 1):
+            pass_badge = "🟢 Govt Free Pass OK" if step['govt_free_pass'] else "🔴 Paid Private Bus"
+            st.markdown(
+                f"""
+                **Step {idx}: Board Bus `{step['bus_number']}`**  
+                * From: **{step['from_stop_name']}**  
+                * To: **{step['to_stop_name']}**  
+                * 🕒 {step['time_mins']} mins | 🛣️ {step['distance_km']} km | 💵 ₹{step['fare_rs']}  
+                * *Status:* {pass_badge}
+                """
+            )
             st.markdown("---")
             
-            # Two-column layout: Route details table & Interactive Map
-            col_left, col_right = st.columns([1, 1.2])
-            
-            with col_left:
-                st.subheader("📋 Step-by-Step Boarding Guide")
-                for idx, step in enumerate(result['route_details'], 1):
-                    pass_badge = "🟢 Govt Free Pass OK" if step['govt_free_pass'] else "🔴 Paid Private Bus"
-                    st.markdown(
-                        f"""
-                        **Step {idx}: Board Bus `{step['bus_number']}`**  
-                        * From: **{step['from_stop_name']}**  
-                        * To: **{step['to_stop_name']}**  
-                        * 🕒 {step['time_mins']} mins | 🛣️ {step['distance_km']} km | 💵 ₹{step['fare_rs']}  
-                        * *Status:* {pass_badge}
-                        """
-                    )
-                    st.markdown("---")
-                    
-            with col_right:
-                st.subheader("🗺️ Interactive Route Map (OpenStreetMap)")
-                route_map = create_route_map(stops_df, result['route_details'], result['path_nodes'])
-                st_folium(route_map, width=650, height=450)
-                
-        else:
-            st.error(f"❌ Routing Error: {result['error']}")
+    with col_right:
+        st.subheader("🗺️ Interactive Route Map (OpenStreetMap)")
+        route_map = create_route_map(stops_df, result['route_details'], result['path_nodes'])
+        # returned_objects=[] prevents map clicks/zooms from resetting the UI panel
+        st_folium(route_map, width=650, height=450, returned_objects=[])
 else:
     st.info("👈 Select your starting point and destination in Trichy, then click **Calculate Optimal AI Route** above.")
