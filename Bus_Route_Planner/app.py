@@ -55,37 +55,36 @@ col_s1, col_s2 = st.columns(2)
 with col_s1:
     source_name = st.selectbox("Starting Bus Stop:", list(stop_options.keys()), index=0)
 with col_s2:
-    target_name = st.selectbox("Destination Bus Stop:", list(stop_options.keys()), index=2)
+    destination_default_index = 2 if len(stop_options) > 2 else 0
+    target_name = st.selectbox("Destination Bus Stop:", list(stop_options.keys()), index=destination_default_index)
 
 source_id = stop_options[source_name]
 target_id = stop_options[target_name]
 
-# Initialize session state so results persist across map interactions
-if 'route_result' not in st.session_state:
-    st.session_state.route_result = None
+# 4. Automatic Route Calculation on Input Change
+current_inputs = (source_id, target_id, selected_metric)
 
-# 4. Route Calculation Trigger
-if st.button("🚀 Calculate Optimal AI Route", type="primary"):
+if 'last_inputs' not in st.session_state or st.session_state.last_inputs != current_inputs:
     if source_id == target_id:
-        st.warning("⚠️ Starting location and destination cannot be the same. Please select different stops.")
-        st.session_state.route_result = None
+        st.session_state.route_result = {
+            'success': False, 
+            'error': 'Starting location and destination cannot be the same. Please select different stops.'
+        }
     else:
-        result = find_optimal_route(source_id, target_id, optimization_metric=selected_metric)
-        if result['success']:
-            st.session_state.route_result = result
-        else:
-            st.session_state.route_result = None
-            st.error(f"❌ Routing Error: {result['error']}")
+        st.session_state.route_result = find_optimal_route(source_id, target_id, optimization_metric=selected_metric)
+    st.session_state.last_inputs = current_inputs
 
-# 5. Persistent Results Display
-if st.session_state.route_result is not None:
-    result = st.session_state.route_result
-    st.success(f"✅ Optimal Path Found Successfully using Dijkstra's Algorithm!")
+# 5. Display Results
+result = st.session_state.get('route_result', None)
+
+if result and result['success']:
+    st.success(f"✅ Optimal Path Found Successfully using Dijkstra's Algorithm ({optimization_goal})!")
     
     # Metrics Dashboard
+    total_time_calc = sum(s['time_mins'] for s in result['route_details'])
     m1, m2, m3, m4 = st.columns(4)
     with m1:
-        st.metric("Total Estimated Time", f"{result['total_cost']} mins")
+        st.metric("Total Estimated Time", f"{total_time_calc} mins")
     with m2:
         st.metric("Total Distance", f"{result['total_distance_km']} km")
     with m3:
@@ -116,7 +115,7 @@ if st.session_state.route_result is not None:
     with col_right:
         st.subheader("🗺️ Interactive Route Map (OpenStreetMap)")
         route_map = create_route_map(stops_df, result['route_details'], result['path_nodes'])
-        # returned_objects=[] prevents map clicks/zooms from resetting the UI panel
         st_folium(route_map, width=650, height=450, returned_objects=[])
 else:
-    st.info("👈 Select your starting point and destination in Trichy, then click **Calculate Optimal AI Route** above.")
+    err_msg = result['error'] if result else "Please select valid distinct stops."
+    st.warning(f"⚠️ {err_msg}")
