@@ -22,7 +22,7 @@ def get_osrm_road_path(lat1, lon1, lat2, lon2):
 def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
     """
     Creates an interactive Folium map marking individual gang members (up to 5)
-    with distinct colored icons without disturbing overlapping stops.
+    with completely unique icon shapes and distinct colors.
     """
     trichy_lat = 10.8305
     trichy_lon = 78.6821
@@ -46,11 +46,20 @@ def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
             segment_coords = get_osrm_road_path(lat1, lon1, lat2, lon2)
             full_road_coords.extend(segment_coords)
 
-    # Map stop_id to list of member numbers to handle up to 5 members independently
+    # Map stop_id to list of member numbers
     member_starts = member_starts or []
     stop_to_members = defaultdict(list)
     for idx, m_id in enumerate(member_starts):
         stop_to_members[m_id].append(idx + 1)
+
+    # Unique icon shapes & colors mapping for up to 5 members
+    member_styles = {
+        1: {'color': 'green', 'icon': 'user'},       # Member 1: User Icon (Green)
+        2: {'color': 'orange', 'icon': 'star'},      # Member 2: Star Icon (Orange)
+        3: {'color': 'purple', 'icon': 'heart'},     # Member 3: Heart Icon (Purple)
+        4: {'color': 'cadetblue', 'icon': 'bookmark'}, # Member 4: Bookmark Icon (Cadetblue)
+        5: {'color': 'darkred', 'icon': 'fire'}      # Member 5: Fire Icon (Darkred)
+    }
 
     # Place custom markers for all stops along the path
     for idx, stop_id in enumerate(path_nodes):
@@ -72,9 +81,10 @@ def create_route_map(stops_df, route_details, path_nodes, member_starts=None):
                 members_list = stop_to_members[stop_id]
                 m_str = ", ".join(map(str, members_list))
                 first_m = members_list[0]
-                # Distinct colors for up to 5 members
-                color = ['green', 'orange', 'purple', 'cadetblue', 'darkred'][(first_m - 1) % 5]
-                icon_name = 'user'
+                
+                style = member_styles.get(first_m, {'color': 'blue', 'icon': 'user'})
+                color = style['color']
+                icon_name = style['icon']
                 prefix = 'glyphicon'
                 popup_title = f'👤 GANG MEMBER(S) {m_str} START'
             else:
