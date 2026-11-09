@@ -14,3 +14,13 @@ stop_id,stop_name,latitude,longitude,zone,is_sheltered
 13,BHEL East Gate,10.7550,78.8000,Suburban East,1
 14,Samayapuram,10.9500,78.7200,North Outskirts,1
 15,Edamalaipatti Pudur,10.7700,78.6700,South Trichy,0
+16,Woraiyur,10.8350,78.6700,West Trichy,1
+17,Trichy Airport,10.7650,78.7080,South Trichy,1
+18,Thiruverumbur,10.7580,78.7650,Suburban East,1
+19,Cantonment,10.7980,78.6850,Cantonment,1
+20,Chinthamani,10.8400,78.6850,Central Trichy,0
+21,Vayalur Road,10.8100,78.6600,West Trichy,0
+22,Kamarajar Salai,10.7880,78.6920,Cantonment,1
+23,Othakadai,10.8320,78.6880,Central Trichy,1
+24,Pettaivaithalai,10.9200,78.5000,West Outskirts,0
+25,Royal Road,10.7960,78.6800,Cantonment,1
