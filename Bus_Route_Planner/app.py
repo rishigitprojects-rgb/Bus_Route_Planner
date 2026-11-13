@@ -58,6 +58,17 @@ num_members = 2
 if routing_mode == "👥 Friends Gang Meet-Up (Multi-Source Convergence)":
     num_members = st.sidebar.slider("👥 Gang Size (Members):", min_value=2, max_value=5, value=2, step=1)
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 👨‍💻 Project Team / Developed By")
+st.sidebar.markdown(
+    "**ROHITH A**  \n"
+    "**RISHI ARAVINDH L**  \n"
+    "**SAKTHI VIGNESH**"
+)
+st.sidebar.caption("ADI1221 – Principles of Artificial Intelligence")
+st.sidebar.caption("Department of AI & DS")
+st.sidebar.caption("K. Ramakrishnan College of Engineering")
+
 st.markdown("---")
 
 if routing_mode == "👤 Single Commuter (A to B)":
@@ -219,3 +230,15 @@ else:
     else:
         err_msg = gang_res['error'] if gang_res else "Please configure all member starting points."
         st.warning(f"⚠️ {err_msg}")
+
+st.markdown("---")
+footer_left, footer_center, footer_right = st.columns([1, 2, 1])
+with footer_center:
+    st.markdown("### 👨‍💻 Project Team / Developed By")
+    st.markdown(
+        "**ROHITH A**  \n"
+        "**RISHI ARAVINDH L**  \n"
+        "**SAKTHI VIGNESH**"
+    )
+    st.caption("ADI1221 – Principles of Artificial Intelligence")
+    st.caption("Department of AI & DS · K. Ramakrishnan College of Engineering")
